@@ -56,23 +56,10 @@ class Node:
         return f'Node({self.value}) <- {[b.value for b in self.befores]}'
 
 
-def part_one(input_data: list[str], args) -> int:
-    # test: 97 -> 75 -> 47 -> 61 -> 53 -> 29 -> 13
-    # point each node to all of its sub nodes per the page ordering rules
-    # find a node that has nothing pointing to it. that's the head
-    # find a node that head points to, but nothing else. delete all the other pointers from head
-    # continue like that, finding the node that is only pointed to by the current node,
-    # then deleting the other outgoing pointers from the current node
-    # at the end, you should have a sorted, linked list
-    # but actually:
-    # hold on to the page ordering rules, but don't do anything with them yet
-    # for each update:  get the pages I care about, get the rules involving only those pages, and link together just those rules
-    # if an update is valid, find the middle page number and add it to the running total
-    mode = 'rules'
-    updates = []
+def parse(input_data: list[str]):
     rules = []
-    middle_pages_sum = 0
-
+    updates = []
+    mode = 'rules'
     for line in input_data:
         if line == '':
             mode = 'update'
@@ -81,31 +68,50 @@ def part_one(input_data: list[str], args) -> int:
             rules.append(line)
         elif mode == 'update':
             updates.append([int(page) for page in line.split(',')])
+    return (rules, updates)
 
+
+def foo(update, rules):
+    # test: 97 -> 75 -> 47 -> 61 -> 53 -> 29 -> 13
+    # point each node to all of its sub nodes per the page ordering rules
+    # find a node that has nothing pointing to it. that's the head
+    # find a node that head points to, but nothing else. delete all the other pointers from head
+    # continue like that, finding the node that is only pointed to by the current node,
+    # then deleting the other outgoing pointers from the current node
+    # at the end, you should have a sorted, linked list
+    nodes = {}
+    applicable_rules = [rule for rule in rules if is_applicable(rule, update)]
+    for rule in applicable_rules:
+        (before, after) = rule.split('|')
+        before = int(before)
+        after = int(after)
+        if before not in nodes: nodes[before] = Node(before)
+        if after not in nodes: nodes[after] = Node(after)
+        nodes[before].is_before(nodes[after])
+
+    order = []
+    logging.debug(f'count: {len(nodes)}; values: {nodes.values()}')
+    head = [node for node in nodes.values() if node.incoming_count() == 0][0]
+    current = head
+    order.append(head.value)
+    while current is not None:
+        next_candidates = [node for node in current.afters if node.incoming_count() == 1]
+        next = next_candidates[0] if len(next_candidates) == 1 else None
+        current.prune_to(next)
+        if next is not None: order.append(next.value)
+        current = next
+    logging.debug(f'order: {order}')
+    return order
+
+
+def part_one(input_data: list[str], args) -> int:
+    # grab the the page ordering rules, but don't do anything with them yet
+    # for each update: get the pages I care about, get the rules involving only those pages, and link together just those rules
+    # if an update is valid, find the middle page number and add it to the running total
+    middle_pages_sum = 0
+    (rules, updates) = parse(input_data)
     for update in updates:
-        nodes = {}
-        applicable_rules = [rule for rule in rules if is_applicable(rule, update)]
-        for rule in applicable_rules:
-            (before, after) = rule.split('|')
-            before = int(before)
-            after = int(after)
-            if before not in nodes: nodes[before] = Node(before)
-            if after not in nodes: nodes[after] = Node(after)
-            nodes[before].is_before(nodes[after])
-
-        order = []
-        logging.debug(f'count: {len(nodes)}; values: {nodes.values()}')
-        head = [node for node in nodes.values() if node.incoming_count() == 0][0]
-        current = head
-        order.append(head.value)
-        while current is not None:
-            next_candidates = [node for node in current.afters if node.incoming_count() == 1]
-            next = next_candidates[0] if len(next_candidates) == 1 else None
-            current.prune_to(next)
-            if next is not None: order.append(next.value)
-            current = next
-        logging.debug(f'order: {order}')
-
+        order = foo(update, rules)
         indexes = []
         for page in update: indexes.append(order.index(page))
         valid = indexes == sorted(indexes)
@@ -123,6 +129,8 @@ def is_applicable(rule, update):
 
 
 def part_two(input_data: list[str], args) -> int:
+    # for each incorrectly-ordered update, order it correctly.
+    # sum the middle pages
     # for line_index,line in enumerate(input_data):
     for line in input_data:
         # for char_index,char in enumerate(line):
@@ -146,8 +154,8 @@ if __name__ == '__main__':
     if args.part == 1:
         expected_result = 143
         actual_result = part_one(input_data, args)
-        logging.info(f"Part 1: {actual_result} (expected {expected_result}: {actual_result == expected_result})")
+        logging.info(f"Part 1: {actual_result} (test: {expected_result} = {actual_result == expected_result})")
     elif args.part == 2:
         expected_result = 0
         actual_result = part_two(input_data, args)
-        logging.info(f"Part 2: {actual_result} (expected {expected_result}: {actual_result == expected_result})")
+        logging.info(f"Part 2: {actual_result} (test: {expected_result} = {actual_result == expected_result})")

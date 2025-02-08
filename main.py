@@ -51,8 +51,8 @@ if __name__ == '__main__':
     if args.part == 1:
         expected_result = 0
         actual_result = part_one(input_data, args)
-        logging.info(f"Part 1: {actual_result} (expected {expected_result}: {actual_result == expected_result})")
+        logging.info(f"Part 1: {actual_result} (test: {expected_result} = {actual_result == expected_result})")
     elif args.part == 2:
         expected_result = 0
         actual_result = part_two(input_data, args)
-        logging.info(f"Part 2: {actual_result} (expected {expected_result}: {actual_result == expected_result})")
+        logging.info(f"Part 2: {actual_result} (test: {expected_result} = {actual_result == expected_result})")
