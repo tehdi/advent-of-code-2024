@@ -49,6 +49,10 @@ if __name__ == '__main__':
     with open(filename) as input_file:
         input_data = [line.rstrip('\n') for line in input_file]
     if args.part == 1:
-        logging.info(f"Part 1 (test: 0): {part_one(input_data, args)}")
+        expected_result = 0
+        actual_result = part_one(input_data, args)
+        logging.info(f"Part 1: {actual_result} (expected {expected_result}: {actual_result == expected_result})")
     elif args.part == 2:
-        logging.info(f"Part 2 (test: 0): {part_two(input_data, args)}")
+        expected_result = 0
+        actual_result = part_two(input_data, args)
+        logging.info(f"Part 2: {actual_result} (expected {expected_result}: {actual_result == expected_result})")
