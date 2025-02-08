@@ -71,7 +71,7 @@ def parse(input_data: list[str]):
     return (rules, updates)
 
 
-def foo(update, rules):
+def get_correct_order(update, rules):
     # test: 97 -> 75 -> 47 -> 61 -> 53 -> 29 -> 13
     # point each node to all of its sub nodes per the page ordering rules
     # find a node that has nothing pointing to it. that's the head
@@ -111,13 +111,10 @@ def part_one(input_data: list[str], args) -> int:
     middle_pages_sum = 0
     (rules, updates) = parse(input_data)
     for update in updates:
-        order = foo(update, rules)
-        indexes = []
-        for page in update: indexes.append(order.index(page))
-        valid = indexes == sorted(indexes)
-        logging.debug(f'update: {update}; indexes: {indexes}; valid: {valid}')
+        order = get_correct_order(update, rules)
+        valid = update == order
+        logging.debug(f'update: {update}; correct order: {order}; valid: {valid}')
         if valid: middle_pages_sum += update[len(update)//2]
-
     return middle_pages_sum
 
 
@@ -130,13 +127,15 @@ def is_applicable(rule, update):
 
 def part_two(input_data: list[str], args) -> int:
     # for each incorrectly-ordered update, order it correctly.
-    # sum the middle pages
-    # for line_index,line in enumerate(input_data):
-    for line in input_data:
-        # for char_index,char in enumerate(line):
-        for char in line:
-            pass
-    return 0
+    # then sum the middle pages
+    middle_pages_sum = 0
+    (rules, updates) = parse(input_data)
+    for update in updates:
+        order = get_correct_order(update, rules)
+        valid = update == order
+        logging.debug(f'update: {update}; correct order: {order}; valid: {valid}')
+        if not valid: middle_pages_sum += order[len(order)//2]
+    return middle_pages_sum
 
 
 if __name__ == '__main__':
@@ -156,6 +155,6 @@ if __name__ == '__main__':
         actual_result = part_one(input_data, args)
         logging.info(f"Part 1: {actual_result} (test: {expected_result} = {actual_result == expected_result})")
     elif args.part == 2:
-        expected_result = 0
+        expected_result = 123
         actual_result = part_two(input_data, args)
         logging.info(f"Part 2: {actual_result} (test: {expected_result} = {actual_result == expected_result})")
