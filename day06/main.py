@@ -59,25 +59,9 @@ def in_range(position, max_row, max_column):
     return row >= 0 and row <= max_row and column >= 0 and column <= max_row
 
 
-# How many distinct positions will the guard visit before leaving the mapped area?
-def part_one(input_data: list[str], args) -> int:
-    obstacles = set()
-    max_row = len(input_data) - 1
-    for row_index,row in enumerate(input_data):
-        max_column = len(row) - 1
-        for col_index,char in enumerate(row):
-            position = (row_index, col_index)
-            if char == GUARD:
-                guard_position = position
-            elif char == OBSTACLE:
-                obstacles.add(position)
-    facing = UP
+def find_visited(guard_position, facing, obstacles, max_row, max_column):
     visited = set()
     visited.add(guard_position)
-    logging.debug(obstacles)
-    logging.debug(max_row)
-    logging.debug(max_column)
-    logging.debug(visited)
     while True:
         movement_delta = movement[facing][STEP_INDEX]
         new_position = (guard_position[ROW_INDEX] + movement_delta[ROW_INDEX], guard_position[COLUMN_INDEX] + movement_delta[COLUMN_INDEX])
@@ -91,25 +75,45 @@ def part_one(input_data: list[str], args) -> int:
             visited.add(new_position)
             logging.debug(f"moving to {new_position}: {len(visited)}")
             guard_position = new_position
-        print_map(guard_position, facing, obstacles, visited, max_row, max_column)
-    return len(visited)
+        # print_map(guard_position, facing, obstacles, visited, max_row, max_column)
+    return visited
 
 
-# How many different spots can I place an obstacle to put the guard into a loop?
-def part_two(input_data: list[str], args) -> int:
+# How many distinct positions will the guard visit before leaving the mapped area?
+def part_one(input_data: list[str], args) -> int:
     obstacles = set()
-    new_obstacle_options = set()
     max_row = len(input_data) - 1
     for row_index,row in enumerate(input_data):
         max_column = len(row) - 1
         for col_index,char in enumerate(row):
             position = (row_index, col_index)
             if char == GUARD:
-                initial_guard_position = position
+                guard_position = position
             elif char == OBSTACLE:
                 obstacles.add(position)
-            else: new_obstacle_options.add(position)
+    facing = UP
+    visited = find_visited(guard_position, facing, obstacles, max_row, max_column)
+    return len(visited)
+
+
+# How many different spots can I place an obstacle to put the guard into a loop?
+def part_two(input_data: list[str], args) -> int:
+    obstacles = set()
+    max_row = len(input_data) - 1
+    for row_index,row in enumerate(input_data):
+        max_column = len(row) - 1
+        for col_index,char in enumerate(row):
+            position = (row_index, col_index)
+            if char == GUARD: initial_guard_position = position
+            elif char == OBSTACLE: obstacles.add(position)
+    facing = UP
+    # If the guard isn't going to walk to a spot in the room,
+    # there's no point trying to add a new obstacle there.
+    new_obstacle_options = find_visited(initial_guard_position, facing, obstacles, max_row, max_column)
+    new_obstacle_options.remove(initial_guard_position)
     new_obstacle_loops = set()
+    # TODO I don't have to trace the whole route from the start evey time.
+    # I can just start in the (position, facing) immediately before the new obstacle
     for new_obstacle_position in new_obstacle_options:
         logging.debug(f"trying new obstacle at {new_obstacle_position}")
         guard_position = initial_guard_position
@@ -127,7 +131,7 @@ def part_two(input_data: list[str], args) -> int:
                 logging.debug(f"{new_position} is an obstacle. turning to {facing}")
                 # print_map(guard_position, facing, obstacles, visited, max_row, max_column)
                 if (guard_position, facing) in visited:
-                    logging.info(f"found ({guard_position}, {facing}) in visited; {new_obstacle_position} creates a loop")
+                    logging.debug(f"found ({guard_position}, {facing}) in visited; {new_obstacle_position} creates a loop")
                     new_obstacle_loops.add(new_obstacle_position)
                     break
                 else: visited.add((guard_position, facing))
