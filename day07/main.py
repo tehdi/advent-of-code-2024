@@ -26,7 +26,7 @@ def multiply(a, b): return a * b
 def concatenate(a, b): return int(str(a) + str(b))
 
 
-class Equation:
+class EquationV1:
     def __init__(self, test_value, numbers):
         self.test_value = test_value
         self.numbers = numbers
@@ -37,7 +37,7 @@ class Equation:
         for i in range(max_trials):
             operators = [
                 plus if o == '0' else multiply
-                for o in "{0:b}".format(i) .zfill(operators_needed)
+                for o in "{0:b}".format(i).zfill(operators_needed)
             ]
             operators.insert(0, plus)
             steps = itertools.zip_longest(operators, self.numbers)
@@ -53,23 +53,69 @@ class Equation:
         return f"{self.test_value} = {self.numbers}"
 
 
+# https://stackoverflow.com/a/28666223
+def number_to_base(number, base):
+    if number == 0: return '0'
+    digits = []
+    while number:
+        digits.append(int(number % base))
+        number //= base
+    return ''.join([str(d) for d in digits[::-1]])
+
+
+def pick_function(operator):
+    logging.debug(f"finding operator function for {operator}")
+    if operator == '0': return plus
+    if operator == '1': return multiply
+    if operator == '2': return concatenate
+    return None
+
+
+class EquationV2:
+    def __init__(self, test_value, numbers):
+        self.test_value = test_value
+        self.numbers = numbers
+
+    def try_solve(self):
+        operator_options = 3
+        operators_needed = len(self.numbers) - 1
+        max_trials = operator_options**operators_needed
+        for i in range(max_trials):
+            operators = [
+                pick_function(o)
+                for o in number_to_base(i, operator_options).zfill(operators_needed)
+            ]
+            operators.insert(0, plus)
+            total = 0
+            steps = itertools.zip_longest(operators, self.numbers)
+            for step in steps: total = step[0](total, step[1])
+            logging.debug(f"{self.test_value}: {total}?")
+            if total == self.test_value: return total
+        return 0
+
+    def __repr__(self):
+        return f"{self.test_value} = {self.numbers}"
+
+
 def part_one(input_data: list[str], args) -> int:
     equations = []
     for line in input_data:
         test_value = int(line.split(':')[0])
         numbers = [int(n) for n in line.split(': ')[1].split(' ')]
-        equations.append(Equation(test_value, numbers))
+        equations.append(EquationV1(test_value, numbers))
     total_calibration_result = sum(e.try_solve() for e in equations)
     return total_calibration_result
 
 
+# Yes, it takes a while to run. No, I don't think it would reasonably extend to 4 operator options.
 def part_two(input_data: list[str], args) -> int:
-    # for line_index,line in enumerate(input_data):
+    equations = []
     for line in input_data:
-        # for char_index,char in enumerate(line):
-        for char in line:
-            pass
-    return 0
+        test_value = int(line.split(':')[0])
+        numbers = [int(n) for n in line.split(': ')[1].split(' ')]
+        equations.append(EquationV2(test_value, numbers))
+    total_calibration_result = sum(e.try_solve() for e in equations)
+    return total_calibration_result
 
 
 if __name__ == '__main__':
@@ -89,6 +135,6 @@ if __name__ == '__main__':
         actual_result = part_one(input_data, args)
         logging.info(f"Part 1: {actual_result} (test: {expected_result} = {actual_result == expected_result})")
     elif args.part == 2:
-        expected_result = 0
+        expected_result = 11387
         actual_result = part_two(input_data, args)
         logging.info(f"Part 2: {actual_result} (test: {expected_result} = {actual_result == expected_result})")
